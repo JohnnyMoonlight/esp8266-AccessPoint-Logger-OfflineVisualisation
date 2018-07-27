@@ -5,8 +5,11 @@ I created this repo hoping to get help and suggestions to the code. I am very ne
 
 Sources:
 https://techtutorialsx.com/2017/04/25/esp8266-setting-an-access-point/
+
 https://tttapa.github.io/ESP8266/Chap16%20-%20Data%20Logging.html
+
 https://42project.net/esp8266-flash-dateisystem-spiffs-beispielhaft-benutzen/
+
 http://bienonline.magix.net/public/esp8266-webserver-klasse.html
 
 Cheers!
