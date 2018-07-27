@@ -55,8 +55,8 @@ unsigned long timeInterval = 5000;
 unsigned long currentTime;
 unsigned long timeOfLastMeasurement = 0;
 /* Set these to your desired credentials. */
-const char *ssid = "ESPap";
-const char *password = "thereisnospoon";
+const char *ssid = "ESP";
+const char *password = "ESP";
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
