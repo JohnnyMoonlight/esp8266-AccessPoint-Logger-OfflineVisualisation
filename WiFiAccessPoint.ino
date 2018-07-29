@@ -55,8 +55,8 @@ unsigned long timeInterval = 5000;
 unsigned long currentTime;
 unsigned long timeOfLastMeasurement = 0;
 /* Set these to your desired credentials. */
-const char *ssid = "ESP";
-const char *password = "ESP";
+const char *ssid = "ESPap";
+const char *password = "thereisnospoon";
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
@@ -73,14 +73,28 @@ void handleRoot() {
 
 void handleFile() {
   
-  server.send(200, "text/html", "<h1>Die Temperature am Sensor beträgt " + String(tempC) + " Grad Celsius.</h1>");
-  Serial.println("Client connected.");
+  File f = SPIFFS.open("/index.html", "r");
+  if (f){
+  String s;
+  while (f.available()){
+            s += char(f.read());
+          }
+  server.send(200, "text/html", s);
+  Serial.println(s);
+  }
+  else {
+      server.send(200, "text/html", "Error: File does not exist");
+  }
+
 }
+
+
 
 void setup() {
 	delay(1000);
 	Serial.begin(115200);
 	Serial.println();
+  SPIFFS.begin();
    Serial.print("Configuring access point...");
   /* You can remove the password parameter if you want the AP to be open. */
   WiFi.softAP(ssid, password);
@@ -92,7 +106,6 @@ void setup() {
 
   server.begin();
   Serial.println("HTTP server started");
-  SPIFFS.begin();
 }
 
 
@@ -107,26 +120,27 @@ void loop() {
     getTemperature();
     timeOfLastMeasurement = currentTime;
     //saveDataToCSV(currentTime, tempC);
-      File tempLog = SPIFFS.open("temp.csv", "a");
-      Serial.println("Schreibe Daten in die Datei");
-      tempLog.print(currentTime);
-      tempLog.print(',');
-      tempLog.println(tempC);
-      tempLog.close();       
+    File tempLog = SPIFFS.open("temp.csv", "a");
+    Serial.println("Schreibe Daten in die Datei");
+    tempLog.print(currentTime);
+    tempLog.print(',');
+    tempLog.println(tempC);
+    tempLog.close();       
     
-    Serial.println("End of Loop on " + String(timeOfLastMeasurement));
-    File f = SPIFFS.open("temp.csv", "r");
-    Serial.println("Lesen des Dateiinhaltes:");
+    //Serial.println("End of Loop on " + String(timeOfLastMeasurement));
+    //File f = SPIFFS.open("temp.csv", "r");
+    //Serial.println("Lesen des Dateiinhaltes:");
     //Data from file
-    int i;
-    for(i=0;i<f.size();i++) //Read upto complete file size
-    {
-       Serial.print((char)f.read());
-    }
-    f.close();  //Schließen der Datei
-    delay (100);
+    //int i;
+    //for(i=0;i<f.size();i++) //Read upto complete file size
+    //{
+    //   Serial.print((char)f.read());
+    //}
+    //f.close();  //Schließen der Datei
+    //delay (100);
   }
  }
+
 
 void getTemperature() {
 
