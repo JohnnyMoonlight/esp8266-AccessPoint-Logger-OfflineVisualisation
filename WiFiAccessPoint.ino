@@ -51,7 +51,7 @@ float tempC;
 float tempF;
 
 //Time Interval for Loop
-unsigned long timeInterval = 5000;
+unsigned long timeInterval = 60000;
 unsigned long currentTime;
 unsigned long timeOfLastMeasurement = 0;
 /* Set these to your desired credentials. */
@@ -71,23 +71,46 @@ void handleRoot() {
   Serial.println("Client connected.");
 }
 
-void handleFile() {
+void handleFile(char *filename) {
   
-  File f = SPIFFS.open("/index.html", "r");
+  File f = SPIFFS.open(filename, "r");
   if (f){
   String s;
   while (f.available()){
             s += char(f.read());
           }
   server.send(200, "text/html", s);
-  Serial.println(s);
   }
   else {
       server.send(200, "text/html", "Error: File does not exist");
   }
+}
+
+void handleTest() {
+
+  File f = SPIFFS.open("asd.html", "r");
+  String s;
+  while (f.available()){
+            s += char(f.read());
+          }
+  String str = "";
+  Dir dir = SPIFFS.openDir("/");
+  while (dir.next()) {
+  str += dir.fileName();
+  str += " / ";
+  str += dir.fileSize();
+  str += "\r\n";
+}
+Serial.print(str);
+  server.send(200, "text/html", s);
 
 }
 
+void handleDeleteTemp() {
+  SPIFFS.remove("/temp.csv");
+  Serial.print("Temp.csv deleted!");
+  server.send(200, "text/html", "Temp.csv deleted!");
+}
 
 
 void setup() {
@@ -95,37 +118,51 @@ void setup() {
 	Serial.begin(115200);
 	Serial.println();
   SPIFFS.begin();
-   Serial.print("Configuring access point...");
+  Serial.print("Configuring access point...");
   /* You can remove the password parameter if you want the AP to be open. */
   WiFi.softAP(ssid, password);
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(myIP);
-  server.on("/", handleRoot);
-  server.on("/temp.csv", handleFile);
 
+  //handle routines
+  server.on("/", handleRoot);
+  server.on("/index.html", handleHTML);
+  server.on("/test.html", handleTest);
+  server.on("/dygraph.css", handleCSS);
+  server.on("/dygraph.min.js", handleJS);
+  server.on("/temp.csv", handleCSV);
+  server.on("/delete", handleDeleteTemp);
+  server.on("/getTemperature", getTemperatureAndSaveToCSV);
+  
   server.begin();
   Serial.println("HTTP server started");
+  //getTemperature and saveDataToCSV to ensure temp.csv  exists.
+  getTemperature();
+  saveDataToCSV(currentTime, tempC);
+
 }
 
 
 
 void loop() {
+  server.handleClient();
   //If timeInterval has passed, getTemperature and print in File.
   currentTime = millis();
   if (currentTime - timeOfLastMeasurement > timeInterval)
   {
     Serial.println(currentTime);
-    server.handleClient();
     getTemperature();
     timeOfLastMeasurement = currentTime;
     //saveDataToCSV(currentTime, tempC);
-    File tempLog = SPIFFS.open("temp.csv", "a");
+    //File tempLog = SPIFFS.open("temp.csv", "a");
     Serial.println("Schreibe Daten in die Datei");
-    tempLog.print(currentTime);
-    tempLog.print(',');
-    tempLog.println(tempC);
-    tempLog.close();       
+    saveDataToCSV(currentTime, tempC);
+    
+    //tempLog.print(currentTime);
+    //tempLog.print(',');
+    //tempLog.println(tempC);
+    //tempLog.close();       
     
     //Serial.println("End of Loop on " + String(timeOfLastMeasurement));
     //File f = SPIFFS.open("temp.csv", "r");
@@ -140,7 +177,28 @@ void loop() {
     //delay (100);
   }
  }
+ 
+void handleHTML() {
+  handleFile("/index.html");
+}
 
+void handleCSS() {
+  handleFile("/dygraph.css");
+}
+
+void handleJS() {
+  handleFile("/dygraph.min.js");
+}
+
+void handleCSV() {
+  handleFile("/temp.csv");
+}
+
+void getTemperatureAndSaveToCSV() {
+  getTemperature();
+  handleCSV();
+  saveDataToCSV(currentTime, tempC);
+}
 
 void getTemperature() {
 
@@ -159,7 +217,8 @@ void saveDataToCSV(unsigned long currentTime, float tempC)
 {
       File tempLog = SPIFFS.open("/temp.csv", "a"); // Write the time and the temperature to the csv file
       tempLog.print(currentTime);
-      tempLog.print(',');
-      tempLog.println(tempC);
+      tempLog.print(", ");
+      tempLog.print(tempC);
+      tempLog.print(", ");
       tempLog.close(); 
 }
